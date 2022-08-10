@@ -20,8 +20,6 @@
   (reset! col-filled-index (into [] (repeat num-cols 0)))
   (reset! board (into [] (repeat num-rows (into [] (repeat num-cols 0))))))
 
-(def game-over? (atom false))
-
 (defn draw-board
   "Draws the Board in the Console"
   []
@@ -82,48 +80,66 @@
   (let [directions [:horizontal :vertical :left-diagonal :right-diagonal]
         points [0 1 2 25 100]
         total (atom 0)]
-    (doseq [row (range num-rows) col (range num-cols)]
-      (doseq [dir directions]
-        (swap! total #(+ % (get points (score-direction player dir row col))))
-        (swap! total #(- % 3))))
+    (doseq [row (range num-rows) col (range num-cols)
+            dir directions
+            :when (= (get-in @board [row col]) player)]
+      (swap! total #(+ % (get points (score-direction player dir row col))))
+      (swap! total #(- % 3)))
     @total))
 
 (defn minimax
-  ;; TODO Implement Minimax Algorithm
   ([depth] (minimax depth true))
   ([depth maximize]
-   (if (<= depth 1) (- (score ai) (score human))
-       (let [minimax-val (atom (if maximize ##-Inf ##Inf))]
-         (dotimes [j num-cols]
-           (let [i (- (dec num-rows) (get @col-filled-index j))]
-             (when (>= i 0)
-							 ;;  Try move at i, j
-               (update-board i j (if maximize ai human))
-							 ;;  Calculate MiniMax
-               (let [val (minimax (dec depth) (not maximize))]
-                 (when ((if maximize > <) val @minimax-val)
-                   (reset! minimax-val val)))
-							 ;;  Undo Last Move
-               (undo-move i j))))
-         @minimax-val))))
+   (cond
+     (check-win human) -200
+     (check-win ai) 200
+     (board-full?) 0
+     (>= depth 5) (- (score ai) (score human))
+     maximize (let [max-val (atom ##-Inf)]
+                (doseq [j (range num-cols)
+                        :let [i (- (dec num-rows) (get @col-filled-index j))]
+                        :while (>= i 0)]
+									;; Try move at i, j
+                  (update-board i j ai)
+									;;  Calculate MiniMax
+                  (let [val (minimax (inc depth) false)]
+                    (swap! max-val #(max %  val)))
+									;; Undo Last Move
+                  (undo-move i j))
+                @max-val)
+     :else
+     (let [mini-val (atom ##Inf)]
+       (doseq [j (range num-cols)
+               :let [i (- (dec num-rows) (get @col-filled-index j))]
+               :while (>= i 0)]
+				 ;; Try move at i, j
+         (update-board i j human)
+				 ;;  Calculate MiniMax
+         (let [val (minimax (inc depth) true)]
+           (swap! mini-val #(min % val)))
+				 ;; Undo Last Move
+         (undo-move i j))
+       @mini-val))))
 
 (defn play-ai []
-  (let [max-val (atom ##-Inf)
-        best-row (atom nil)
-        best-col (atom nil)]
-    (dotimes [j num-cols]
-      (let [i (- (dec num-rows) (get @col-filled-index j))]
-        (when (>= i 0)
-          ;;  Try move at i, j
-          (update-board i j ai)
-          ;;  Calculate MiniMax
-          (let [val (minimax 4 true)]
-            (when (> val @max-val)
-              (reset! max-val val)
-              (reset! best-row i)
-              (reset! best-col j)))
-					;;  Undo Last Move
-          (undo-move i j))))
+  (let [max-val		(atom ##-Inf)
+        best-row	(atom nil)
+        best-col	(atom nil)]
+    (doseq [j			(range num-cols)
+            :let	[i (- (dec num-rows) (get @col-filled-index j))]
+            :when (>= i 0)]
+      (println i j)
+      ;; Try move at i, j
+      (update-board i j ai)
+      ;; Calculate MiniMax
+      (let [val (minimax 1 false)]
+        (when (> val @max-val)
+          (reset! max-val val)
+          (reset! best-row i)
+          (reset! best-col j)))
+			;; Undo Last Move
+      (undo-move i j)
+      (println @max-val))
     (println "AI Chose : " (inc @best-row) (inc @best-col))
     (update-board @best-row @best-col ai)))
 
