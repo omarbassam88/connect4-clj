@@ -128,7 +128,6 @@
     (doseq [j			(range num-cols)
             :let	[i (- (dec num-rows) (get @col-filled-index j))]
             :when (>= i 0)]
-      (println i j)
       ;; Try move at i, j
       (update-board i j ai)
       ;; Calculate MiniMax
@@ -138,8 +137,7 @@
           (reset! best-row i)
           (reset! best-col j)))
 			;; Undo Last Move
-      (undo-move i j)
-      (println @max-val))
+      (undo-move i j))
     (println "AI Chose : " (inc @best-row) (inc @best-col))
     (update-board @best-row @best-col ai)))
 
