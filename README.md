@@ -1,6 +1,7 @@
 # Connect 4 with Clojure
 
-A CLI Conenct Four game written in Clojure implementing Minimax Algorithm.
+A CLI Connect Four game written in Clojure implementing the Minimax Algorithm.
+Planning to add the alpha pruning technique as well.
 
 ## Requirements
 
@@ -21,7 +22,7 @@ To build a `.jar` file:
 lein uberjar
 ```
 
-Or you can directly run the uber jar:
+Then you can directly run the uber jar:
 
 ```sh
 java -jar target/uberjar/connect4-clj-0.1.0-SNAPSHOT-standalone.jar
